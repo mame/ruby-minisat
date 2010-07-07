@@ -1,5 +1,6 @@
 require 'mkmf'
 
+CONFIG["CXX"] ||= "g++"
 MINISAT_DIR = File.join(File.dirname(__FILE__), "../../minisat/MiniSat_v1.14")
 
 minisat_include, _ = dir_config("minisat", MINISAT_DIR, "")
