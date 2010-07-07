@@ -1,41 +1,12 @@
-= ruby-minisat
+/******************************************************************************
 
-ruby-minisat is ruby binding for MiniSat, which is an open-source SAT solver.
+  ruby-minisat -- ruby binding for MiniSat
 
-== Installation
+*******************************************************************************
 
-  $ gem install ruby-minisat
+The MIT License
 
-== How to Use
-
-A brief example that solves a simple SAT problem:
-
-    # solve (a or b) and (not a or b) and (a or not b)
-
-    require "minisat"
-    solver = MiniSat::Solver.new
-    
-    a = solver.new_var
-    b = solver.new_var
-    
-    solver << [a, b] << [-a, b] << [a, -b]
-    
-    p solver.solve  #=> true (satisfiable)
-    
-    p solver[a]  #=> true
-    p solver[b]  #=> true
-
-For more examples, see the examples directory in the distribution.
-
-== Copyright
-
-ruby-minisat is covered under the MIT License.
-This package includes MiniSat in the directory minisat/*, which is also
-distributed under the MIT License.
-
-
-MiniSat -- Copyright (c) 2003-2005, Niklas Een, Niklas Sorensson
-ruby-minisat -- Copyright (c) 2007,2010 Yusuke Endoh
+Copyright (c) 2007 Yusuke Endoh
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -54,3 +25,29 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+
+******************************************************************************/
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef void* wrap_solver;
+
+extern int wrap_lit_pos_var(int v);
+extern int wrap_lit_neg_var(int v);
+
+extern wrap_solver wrap_solver_new();
+extern void wrap_solver_free(wrap_solver slv);
+extern int wrap_solver_new_var(wrap_solver slv);
+extern int wrap_solver_add_clause(wrap_solver slv, int *lits, int len);
+extern int wrap_solver_ref_var(wrap_solver slv, int var);
+extern int wrap_solver_solve(wrap_solver slv, int *lits, int len);
+extern int wrap_solver_simplify_db(wrap_solver slv);
+extern int wrap_solver_var_size(wrap_solver slv);
+extern int wrap_solver_clause_size(wrap_solver slv);
+
+#ifdef __cplusplus
+}
+#endif

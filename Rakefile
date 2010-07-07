@@ -3,14 +3,15 @@ require 'rake'
 
 begin
   require 'jeweler'
-  Jeweler::Tasks.new do |gem|
+  jeweler_tasks = Jeweler::Tasks.new do |gem|
     gem.name = "ruby-minisat"
-    gem.summary = %Q{TODO: one-line summary of your gem}
-    gem.description = %Q{TODO: longer description of your gem}
+    gem.summary = %Q{ruby binding for MiniSat, which is an open-source SAT solver}
+    gem.description = gem.summary
     gem.email = "mame@tsg.ne.jp"
     gem.homepage = "http://github.com/mame/ruby-minisat"
     gem.authors = ["Yusuke Endoh"]
-    # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
+    gem.extensions = FileList['ext/**/extconf.rb']
+    gem.files.include FileList['ext/**/*', 'minisat/**/*/**']
   end
   Jeweler::GemcutterTasks.new
 rescue LoadError
@@ -24,19 +25,6 @@ Rake::TestTask.new(:test) do |test|
   test.verbose = true
 end
 
-begin
-  require 'rcov/rcovtask'
-  Rcov::RcovTask.new do |test|
-    test.libs << 'test'
-    test.pattern = 'test/**/test_*.rb'
-    test.verbose = true
-  end
-rescue LoadError
-  task :rcov do
-    abort "RCov is not available. In order to run rcov, you must: sudo gem install spicycode-rcov"
-  end
-end
-
 task :test => :check_dependencies
 
 task :default => :test
@@ -48,5 +36,13 @@ Rake::RDocTask.new do |rdoc|
   rdoc.rdoc_dir = 'rdoc'
   rdoc.title = "ruby-minisat #{version}"
   rdoc.rdoc_files.include('README*')
-  rdoc.rdoc_files.include('lib/**/*.rb')
+  rdoc.rdoc_files.include('ext/**/*.c')
+end
+
+begin
+  require 'rake/extensiontask'
+  require 'rake/extensiontesttask'
+
+  Rake::ExtensionTask.new('minisat', jeweler_tasks.gemspec)
+rescue LoadError
 end
