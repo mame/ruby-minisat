@@ -122,11 +122,11 @@ def output_field(solution, field)
     line.each_with_index do |c, x|
       ary[y * 2 + 1][x * 2 + 1] = c ? c.to_s.rjust(2) : " ."
 
-      if x == 0 || solution[x - 1][y] != solution[x][y]
+      if x == 0 || solution[y][x - 1] != solution[y][x]
         ary[y * 2 + 1][x * 2] = " |" 
       end
       ary[y * 2 + 1][x * 2 + 2] = " |" if x == w - 1
-      if y == 0 || solution[x][y - 1] != solution[x][y]
+      if y == 0 || solution[y - 1][x] != solution[y][x]
         ary[y * 2][x * 2 + 1] = "--"
       end
       ary[y * 2 + 2][x * 2 + 1] = "--" if y == h - 1
