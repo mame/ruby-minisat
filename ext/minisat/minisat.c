@@ -339,25 +339,38 @@ static VALUE solver_solve(int argc, VALUE *argv, VALUE rslv)
 
 /*
  *  call-seq:
- *     solver.simplify_db   -> true or false
+ *     solver.simplify    -> true or false
  *
  *  Detects conflicts independent of the assumptions.  This is useful when the
  *  same SAT is solved many times under some different assumptions.
+ *  Solver#simplify_db is deprecated.
  *
  */
-static VALUE solver_simplify_db(VALUE rslv)
+static VALUE solver_simplify(VALUE rslv)
 {
     csolver *cslv;
 
     Data_Get_Struct(rslv, csolver, cslv);
 
     check_model_available(cslv->result, 0);
-    if(!wrap_solver_simplify_db(cslv->solver)) {
+    if(!wrap_solver_simplify(cslv->solver)) {
         cslv->result = UNSATISFIABLE;
         return Qfalse;
     }
 
     return Qtrue;
+}
+
+/*
+ *  call-seq:
+ *     solver.simplify_db    -> true or false
+ *
+ *  Deprecated. The same as Solver#simplify.
+ *
+ */
+static VALUE solver_simplify_db(VALUE rslv)
+{
+    return solver_simplify(rslv);
 }
 
 /*
@@ -479,6 +492,7 @@ void Init_minisat()
     rb_define_method(rb_cSolver, "<<", solver_add_clause_2, 1);
     rb_define_method(rb_cSolver, "[]", solver_ref_var, 1);
     rb_define_method(rb_cSolver, "solve", solver_solve, -1);
+    rb_define_method(rb_cSolver, "simplify", solver_simplify, 0);
     rb_define_method(rb_cSolver, "simplify_db", solver_simplify_db, 0);
     rb_define_method(rb_cSolver, "var_size", solver_var_size, 0);
     rb_define_method(rb_cSolver, "clause_size", solver_clause_size, 0);

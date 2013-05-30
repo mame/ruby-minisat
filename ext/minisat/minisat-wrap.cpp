@@ -29,17 +29,23 @@ THE SOFTWARE.
 ******************************************************************************/
 
 
-#include "Solver.h"
+#ifdef HAVE_MINISAT_CORE_SOLVER_H
+#include "minisat/core/Solver.h"
+#else
+#include "core/Solver.h"
+#endif
 #include "minisat.h"
+
+using namespace Minisat;
 
 /***** variable **************************************************************/
 
 extern "C" int wrap_lit_pos_var(int v) {
-    return index(Lit(v, false));
+    return toInt(mkLit(v, false));
 }
 
 extern "C" int wrap_lit_neg_var(int v) {
-    return index(Lit(v, true));
+    return toInt(mkLit(v, true));
 }
 
 /***** solver ****************************************************************/
@@ -74,8 +80,8 @@ extern "C" int wrap_solver_solve(wrap_solver slv, int *lits, int len) {
     return ((Solver*) slv)->solve(lit_vec) ? 1 : 0;
 }
 
-extern "C" int wrap_solver_simplify_db(wrap_solver slv) {
-    ((Solver*) slv)->simplifyDB();
+extern "C" int wrap_solver_simplify(wrap_solver slv) {
+    ((Solver*) slv)->simplify();
     return ((Solver*) slv)->okay() ? 1 : 0;
 }
 

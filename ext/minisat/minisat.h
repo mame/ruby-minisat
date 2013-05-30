@@ -44,7 +44,7 @@ extern int wrap_solver_new_var(wrap_solver slv);
 extern int wrap_solver_add_clause(wrap_solver slv, int *lits, int len);
 extern int wrap_solver_ref_var(wrap_solver slv, int var);
 extern int wrap_solver_solve(wrap_solver slv, int *lits, int len);
-extern int wrap_solver_simplify_db(wrap_solver slv);
+extern int wrap_solver_simplify(wrap_solver slv);
 extern int wrap_solver_var_size(wrap_solver slv);
 extern int wrap_solver_clause_size(wrap_solver slv);
 
