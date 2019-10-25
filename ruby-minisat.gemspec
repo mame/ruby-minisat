@@ -1,9 +1,9 @@
 # coding: utf-8
 Gem::Specification.new do |spec|
   spec.name          = "ruby-minisat"
-  spec.version       = "2.2.0"
+  spec.version       = "2.2.0.1"
   spec.authors       = ["Yusuke Endoh"]
-  spec.email         = ["mame@tsg.ne.jp"]
+  spec.email         = ["mame@ruby-lang.org"]
   spec.description   = %q{ruby binding for MiniSat, an open-source SAT solver}
   spec.summary       = %q{ruby binding for MiniSat, an open-source SAT solver}
   spec.homepage      = "http://github.com/mame/ruby-minisat"
