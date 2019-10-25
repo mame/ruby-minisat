@@ -277,7 +277,7 @@ static VALUE solver_add_clause_2(VALUE rslv, VALUE rcls)
     }
     else {
       rcls = rb_convert_type(rcls, T_ARRAY, "Array", "to_ary");
-      return solver_add_clause(RARRAY_LEN(rcls), RARRAY_PTR(rcls), rslv);
+      return solver_add_clause((int) RARRAY_LEN(rcls), RARRAY_PTR(rcls), rslv);
     }
 }
 

@@ -199,7 +199,7 @@ class IntOption : public Option
             return false;
 
         char*   end;
-        int32_t tmp = strtol(span, &end, 10);
+        int32_t tmp = (int32_t) strtol(span, &end, 10);
 
         if (end == NULL) 
             return false;
