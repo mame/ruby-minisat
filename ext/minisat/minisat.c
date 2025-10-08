@@ -502,10 +502,12 @@ void Init_minisat()
 
     rb_cVariable = rb_define_class_under(rb_mMiniSat, "Variable", rb_cObject);
     rb_undef_method(CLASS_OF(rb_cVariable), "new");
+    rb_undef_alloc_func(rb_cVariable);
     rb_define_method(rb_cVariable, "+@", variable_pos, 0);
     rb_define_method(rb_cVariable, "-@", variable_neg, 0);
     rb_define_method(rb_cVariable, "value", variable_value, 0);
 
     rb_cLiteral = rb_define_class_under(rb_mMiniSat, "Literal", rb_cObject);
     rb_undef_method(CLASS_OF(rb_cLiteral), "new");
+    rb_undef_alloc_func(rb_cLiteral);
 }
