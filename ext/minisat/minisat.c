@@ -105,7 +105,6 @@ static VALUE variable_pos(VALUE rvar)
     rlit = Data_Make_Struct(rb_cLiteral, cvariable, value_mark, value_free, clit);
     clit->value = wrap_lit_pos_var(cvar->value);
     clit->solver = cvar->solver;
-    if(OBJ_TAINTED(rvar)) OBJ_TAINT(rlit);
 
     return rlit;
 }
@@ -126,7 +125,6 @@ static VALUE variable_neg(VALUE rvar)
     rlit = Data_Make_Struct(rb_cLiteral, cvariable, value_mark, value_free, clit);
     clit->value = wrap_lit_neg_var(cvar->value);
     clit->solver = cvar->solver;
-    if(OBJ_TAINTED(rvar)) OBJ_TAINT(rlit);
 
     return rlit;
 }
@@ -221,7 +219,6 @@ static VALUE solver_new_var(VALUE rslv)
     cvar->value = wrap_solver_new_var(cslv->solver);
     cvar->solver = rslv;
     cslv->result = NOT_SOLVED_YET;
-    if(OBJ_TAINTED(rslv)) OBJ_TAINT(rvar);
 
     return rvar;
 }
