@@ -40,6 +40,7 @@ extern int wrap_lit_neg_var(int v);
 
 extern wrap_solver wrap_solver_new();
 extern void wrap_solver_free(wrap_solver slv);
+extern size_t wrap_solver_memsize(wrap_solver slv);
 extern int wrap_solver_new_var(wrap_solver slv);
 extern int wrap_solver_add_clause(wrap_solver slv, int *lits, int len);
 extern int wrap_solver_ref_var(wrap_solver slv, int var);

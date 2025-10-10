@@ -39,6 +39,8 @@ THE SOFTWARE.
 
 VALUE rb_mMiniSat, rb_cSolver, rb_cVariable, rb_cLiteral;
 
+static const rb_data_type_t minisat_solver_data_type;
+
 #define SATISFIED                       0 /* satisfied */
 #define NOT_SOLVED_YET                  1 /* not solved yet */
 #define UNSATISFIABLE                   2 /* always unsatisfiable */
@@ -79,15 +81,28 @@ static void check_model_available(int result, int check_only_unsatisfied)
 
 /***** variable **************************************************************/
 
-static void value_free(cvariable *cvar)
+static void value_free(void *ptr)
 {
+    cvariable *cvar = (cvariable *)ptr;
     free(cvar);
 }
 
-static void value_mark(cvariable *cval)
+static void value_mark(void *ptr)
 {
+    cvariable *cval = (cvariable *)ptr;
     rb_gc_mark(cval->solver);
 }
+
+static size_t value_memsize(const void *ptr)
+{
+    return sizeof(cvariable);
+}
+
+static const rb_data_type_t minisat_value_data_type = {
+    "minisat_value",
+    { value_mark, value_free, value_memsize, },
+     0, 0, RUBY_TYPED_FREE_IMMEDIATELY
+};
 
 /*
  *  call-seq:
@@ -101,8 +116,8 @@ static VALUE variable_pos(VALUE rvar)
     cvariable *cvar, *clit;
     VALUE rlit;
 
-    Data_Get_Struct(rvar, cvariable, cvar);
-    rlit = Data_Make_Struct(rb_cLiteral, cvariable, value_mark, value_free, clit);
+    TypedData_Get_Struct(rvar, cvariable, &minisat_value_data_type, cvar);
+    rlit = TypedData_Make_Struct(rb_cLiteral, cvariable, &minisat_value_data_type, clit);
     clit->value = wrap_lit_pos_var(cvar->value);
     clit->solver = cvar->solver;
 
@@ -121,8 +136,8 @@ static VALUE variable_neg(VALUE rvar)
     cvariable *cvar, *clit;
     VALUE rlit;
 
-    Data_Get_Struct(rvar, cvariable, cvar);
-    rlit = Data_Make_Struct(rb_cLiteral, cvariable, value_mark, value_free, clit);
+    TypedData_Get_Struct(rvar, cvariable, &minisat_value_data_type, cvar);
+    rlit = TypedData_Make_Struct(rb_cLiteral, cvariable, &minisat_value_data_type, clit);
     clit->value = wrap_lit_neg_var(cvar->value);
     clit->solver = cvar->solver;
 
@@ -142,8 +157,8 @@ static VALUE variable_value(VALUE rvar)
     cvariable *cvar;
     csolver *cslv;
 
-    Data_Get_Struct(rvar, cvariable, cvar);
-    Data_Get_Struct(cvar->solver, csolver, cslv);
+    TypedData_Get_Struct(rvar, cvariable, &minisat_value_data_type, cvar);
+    TypedData_Get_Struct(cvar->solver, csolver, &minisat_solver_data_type, cslv);
     check_model_available(cslv->result, 0);
     switch(wrap_solver_ref_var(cslv->solver, cvar->value)) {
         case 0: return Qfalse;
@@ -161,13 +176,12 @@ static void convert_lits(int *lits, int argc, VALUE *argv, VALUE rslv)
 
     for(i = 0; i < argc; i++) {
         rval = argv[i];
-        if(TYPE(rval) != T_DATA
-           || RDATA(rval)->dfree != (RUBY_DATA_FUNC)value_free) {
+        if(!rb_typeddata_is_kind_of(rval, &minisat_value_data_type)) {
             rb_raise(rb_eTypeError,
                      "wrong argument type %s (expected Variable or Literal)",
                      rb_obj_classname(rval));
         }
-        Data_Get_Struct(rval, cvariable, cval);
+        TypedData_Get_Struct(rval, cvariable, &minisat_value_data_type,cval);
         if(cval->solver != rslv) {
             rb_raise(rb_eArgError,
                      "Variable or Literal of different solver");
@@ -180,18 +194,31 @@ static void convert_lits(int *lits, int argc, VALUE *argv, VALUE rslv)
 
 /***** solver ****************************************************************/
 
-static void solver_free(csolver *cslv)
+static void solver_free(void *ptr)
 {
+    csolver *cslv = (csolver *)ptr;
     wrap_solver_free(cslv->solver);
     free(cslv);
 }
+
+static size_t solver_memsize(const void *ptr)
+{
+    const csolver *cslv = (const csolver *)ptr;
+    return sizeof(csolver) + wrap_solver_memsize(cslv->solver);
+}
+
+static const rb_data_type_t minisat_solver_data_type = {
+    "minisat_solver",
+    { NULL, solver_free, solver_memsize, },
+     0, 0, RUBY_TYPED_FREE_IMMEDIATELY
+};
 
 static VALUE solver_alloc(VALUE klass)
 {
     csolver *cslv;
     VALUE rslv;
 
-    rslv = Data_Make_Struct(klass, csolver, NULL, solver_free, cslv);
+    rslv = TypedData_Make_Struct(klass, csolver, &minisat_solver_data_type, cslv);
     cslv->solver = wrap_solver_new();
     cslv->result = NOT_SOLVED_YET;
 
@@ -212,10 +239,10 @@ static VALUE solver_new_var(VALUE rslv)
     cvariable *cvar;
     VALUE rvar;
 
-    Data_Get_Struct(rslv, csolver, cslv);
+    TypedData_Get_Struct(rslv, csolver, &minisat_solver_data_type, cslv);
     check_model_available(cslv->result, 1);
     rvar =
-      Data_Make_Struct(rb_cVariable, cvariable, value_mark, value_free, cvar);
+      TypedData_Make_Struct(rb_cVariable, cvariable, &minisat_value_data_type, cvar);
     cvar->value = wrap_solver_new_var(cslv->solver);
     cvar->solver = rslv;
     cslv->result = NOT_SOLVED_YET;
@@ -241,7 +268,7 @@ static VALUE solver_add_clause(int argc, VALUE *argv, VALUE rslv)
     csolver *cslv;
     int *lits;
 
-    Data_Get_Struct(rslv, csolver, cslv);
+    TypedData_Get_Struct(rslv, csolver, &minisat_solver_data_type, cslv);
     lits = ALLOCA_N(int, argc);
     convert_lits(lits, argc, argv, rslv);
     if(!wrap_solver_add_clause(cslv->solver, lits, argc)) {
@@ -268,8 +295,7 @@ static VALUE solver_add_clause(int argc, VALUE *argv, VALUE rslv)
  */
 static VALUE solver_add_clause_2(VALUE rslv, VALUE rcls)
 {
-    if(TYPE(rcls) == T_DATA
-       && RDATA(rcls)->dfree == (RUBY_DATA_FUNC)value_free) {
+    if(rb_typeddata_is_kind_of(rcls, &minisat_value_data_type)) {
       return solver_add_clause(1, &rcls, rslv);
     }
     else {
@@ -291,14 +317,14 @@ static VALUE solver_ref_var(VALUE rslv, VALUE rvar)
     csolver *cslv;
     cvariable *cvar;
 
-    Data_Get_Struct(rslv, csolver, cslv);
+    TypedData_Get_Struct(rslv, csolver, &minisat_solver_data_type, cslv);
     if(CLASS_OF(rvar) != rb_cVariable) {
         rb_raise(rb_eTypeError,
                  "wrong argument type %s (expected Variable)",
                  rb_obj_classname(rvar));
     }
     check_model_available(cslv->result, 0);
-    Data_Get_Struct(rvar, cvariable, cvar);
+    TypedData_Get_Struct(rvar, cvariable, &minisat_value_data_type, cvar);
     switch(wrap_solver_ref_var(cslv->solver, cvar->value)) {
         case 0: return Qfalse;
         case 1: return Qtrue;
@@ -320,7 +346,7 @@ static VALUE solver_solve(int argc, VALUE *argv, VALUE rslv)
     csolver *cslv;
     int *lits;
 
-    Data_Get_Struct(rslv, csolver, cslv);
+    TypedData_Get_Struct(rslv, csolver, &minisat_solver_data_type, cslv);
     lits = ALLOCA_N(int, argc);
     convert_lits(lits, argc, argv, rslv);
     if(wrap_solver_solve(cslv->solver, lits, argc)) {
@@ -347,7 +373,7 @@ static VALUE solver_simplify(VALUE rslv)
 {
     csolver *cslv;
 
-    Data_Get_Struct(rslv, csolver, cslv);
+    TypedData_Get_Struct(rslv, csolver, &minisat_solver_data_type, cslv);
 
     check_model_available(cslv->result, 0);
     if(!wrap_solver_simplify(cslv->solver)) {
@@ -381,7 +407,7 @@ static VALUE solver_var_size(VALUE rslv)
 {
     csolver *cslv;
 
-    Data_Get_Struct(rslv, csolver, cslv);
+    TypedData_Get_Struct(rslv, csolver, &minisat_solver_data_type, cslv);
 
     return LONG2NUM(wrap_solver_var_size(cslv->solver));
 }
@@ -397,7 +423,7 @@ static VALUE solver_clause_size(VALUE rslv)
 {
     csolver *cslv;
 
-    Data_Get_Struct(rslv, csolver, cslv);
+    TypedData_Get_Struct(rslv, csolver, &minisat_solver_data_type, cslv);
 
     return LONG2NUM(cslv->clause_count);
 }
@@ -421,7 +447,7 @@ static VALUE solver_to_s(VALUE rslv)
     VALUE str;
     size_t len;
 
-    Data_Get_Struct(rslv, csolver, cslv);
+    TypedData_Get_Struct(rslv, csolver, &minisat_solver_data_type, cslv);
     switch(cslv->result) {
         case NOT_SOLVED_YET:
             msg = "not solved yet";
@@ -456,7 +482,7 @@ static VALUE solver_solved_p(VALUE rslv)
 {
     csolver *cslv;
 
-    Data_Get_Struct(rslv, csolver, cslv);
+    TypedData_Get_Struct(rslv, csolver, &minisat_solver_data_type, cslv);
 
     return (cslv->result != NOT_SOLVED_YET ? Qtrue : Qfalse);
 }
@@ -472,7 +498,7 @@ static VALUE solver_satisfied_p(VALUE rslv)
 {
     csolver *cslv;
 
-    Data_Get_Struct(rslv, csolver, cslv);
+    TypedData_Get_Struct(rslv, csolver, &minisat_solver_data_type, cslv);
 
     return (cslv->result == SATISFIED ? Qtrue : Qfalse);
 }
