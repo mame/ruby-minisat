@@ -501,7 +501,7 @@ static VALUE solver_satisfied_p(VALUE rslv)
 }
 
 
-void Init_minisat()
+void Init_minisat(void)
 {
     rb_mMiniSat = rb_define_module("MiniSat");
 
