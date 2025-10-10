@@ -58,6 +58,10 @@ extern "C" void wrap_solver_free(wrap_solver slv) {
     delete (Solver*) slv;
 }
 
+extern "C" size_t wrap_solver_memsize(wrap_solver slv) {
+    return sizeof(Solver);
+}
+
 extern "C" int wrap_solver_new_var(wrap_solver slv) {
     return ((Solver*) slv)->newVar();
 }
