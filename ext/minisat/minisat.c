@@ -267,9 +267,10 @@ static VALUE solver_add_clause(int argc, VALUE *argv, VALUE rslv)
 {
     csolver *cslv;
     int *lits;
+    VALUE lits_val;
 
     TypedData_Get_Struct(rslv, csolver, &minisat_solver_data_type, cslv);
-    lits = ALLOCA_N(int, argc);
+    lits = (int *)RB_ALLOCV_N(int, lits_val, argc);
     convert_lits(lits, argc, argv, rslv);
     if(!wrap_solver_add_clause(cslv->solver, lits, argc)) {
         cslv->result = UNSATISFIABLE;
@@ -278,6 +279,8 @@ static VALUE solver_add_clause(int argc, VALUE *argv, VALUE rslv)
         cslv->result = NOT_SOLVED_YET;
         cslv->clause_count++;
     }
+
+    RB_GC_GUARD(lits_val);
 
     return rslv;
 }
@@ -345,9 +348,10 @@ static VALUE solver_solve(int argc, VALUE *argv, VALUE rslv)
 {
     csolver *cslv;
     int *lits;
+    VALUE lits_val;
 
     TypedData_Get_Struct(rslv, csolver, &minisat_solver_data_type, cslv);
-    lits = ALLOCA_N(int, argc);
+    lits = (int *)RB_ALLOCV_N(int, lits_val, argc);
     convert_lits(lits, argc, argv, rslv);
     if(wrap_solver_solve(cslv->solver, lits, argc)) {
         cslv->result = SATISFIED;
@@ -358,6 +362,7 @@ static VALUE solver_solve(int argc, VALUE *argv, VALUE rslv)
           argc == 0 ? UNSATISFIABLE : UNSATISFIABLE_UNDER_ASSUMPTIONS;
         return Qfalse;
     }
+    RB_GC_GUARD(lits_val);
 }
 
 /*
@@ -442,10 +447,7 @@ static VALUE solver_to_s(VALUE rslv)
 {
     const char *cname = rb_obj_classname(rslv);
     const char *msg = NULL;
-    char *buf;
     csolver *cslv;
-    VALUE str;
-    size_t len;
 
     TypedData_Get_Struct(rslv, csolver, &minisat_solver_data_type, cslv);
     switch(cslv->result) {
@@ -462,13 +464,8 @@ static VALUE solver_to_s(VALUE rslv)
             msg = "unsatisfiable under assumptions";
             break;
     }
-    len = strlen(cname) + strlen(msg) + 6 + 16;
-    buf = ALLOCA_N(char, len);
-    snprintf(buf, len + 1, "#<%s:%p %s>", cname, (void*)rslv, msg);
-    str = rb_str_new2(buf);
-    if(OBJ_TAINTED(rslv)) OBJ_TAINT(str);
 
-    return str;
+    return rb_sprintf("#<%s:%p %s", cname, (void*)rslv, msg);
 }
 
 /*
