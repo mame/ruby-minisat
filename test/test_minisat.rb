@@ -104,9 +104,9 @@ class TestMiniSat < Test::Unit::TestCase
 
   def test_var_size
     assert_equal(0, @solver.var_size)
-    var1 = @solver.new_var
+    _var1 = @solver.new_var
     assert_equal(1, @solver.var_size)
-    var2 = @solver.new_var
+    _var2 = @solver.new_var
     assert_equal(2, @solver.var_size)
   end
 
